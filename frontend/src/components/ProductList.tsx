@@ -1,24 +1,24 @@
 // frontend/src/components/ProductList.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; // React is a value import
 import { useOrder } from '../contexts/OrderContext';
 import { getProducts } from '../services/api';
-import type { Product, ProductVariant, Category } from '../types/domain';
+// Product, ProductVariant, Category are used only as types
+import type { Product, ProductVariant, Category } from '../types/domain'; 
 
+// FetchedProduct is a type alias
 type FetchedProduct = Product & {
     category?: Category;
     variants: ProductVariant[];
 };
 
 export const ProductList: React.FC = () => {
-    const { state, dispatch } = useOrder(); // state.items will give us current quantities
+    const { dispatch, state } = useOrder();
 
-    const [products, setProducts] = useState<FetchedProduct[]>([]);
+    const [products, setProducts] = useState<FetchedProduct[]>([]); // Typed
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     
-    // recentlyAddedVariantId state is no longer needed with +/- controls
-
     useEffect(() => {
         if (state.selectedStore) {
             const fetchProducts = async () => {
@@ -41,15 +41,13 @@ export const ProductList: React.FC = () => {
         }
     }, [state.selectedStore]);
 
-    const handleIncrementItem = (product: FetchedProduct, variant: ProductVariant) => {
-        // The ADD_ITEM action in the reducer already handles incrementing if the item exists
+    const handleIncrementItem = (product: FetchedProduct, variant: ProductVariant) => { // Typed
         dispatch({ type: 'ADD_ITEM', payload: { product, variant } });
     };
 
     const handleDecrementItem = (variantId: string) => {
         const itemInOrder = state.items.get(variantId);
         if (itemInOrder && itemInOrder.quantity > 0) {
-            // The UPDATE_QUANTITY action in the reducer handles removal if quantity becomes 0
             dispatch({ type: 'UPDATE_QUANTITY', payload: { variantId, quantity: itemInOrder.quantity - 1 } });
         }
     };
@@ -88,11 +86,11 @@ export const ProductList: React.FC = () => {
                                     {categoryName}
                                 </h3>
                                 <div className="space-y-4">
-                                    {productsInGroup.map((product) => (
+                                    {productsInGroup.map((product) => ( // product is FetchedProduct
                                         <div key={product.id} className="pl-0">
                                             <p className="font-semibold text-lg text-brand-text-on-light mb-1">{product.name}</p>
                                             <div className="space-y-2 pl-2">
-                                                {product.variants.map((variant) => {
+                                                {product.variants.map((variant) => { // variant is ProductVariant
                                                     const itemInOrder = state.items.get(variant.id);
                                                     const currentQuantity = itemInOrder?.quantity || 0;
                                                     return (
@@ -101,17 +99,13 @@ export const ProductList: React.FC = () => {
                                                                 {variant.name} - 
                                                                 <span className="font-medium"> ₹{variant.price.toFixed(2)}</span>
                                                             </span>
-                                                            
-                                                            {/* Quantity Controls */}
                                                             <div className="flex items-center space-x-2 ml-4">
                                                                 <button
                                                                     onClick={() => handleDecrementItem(variant.id)}
                                                                     className={`${qtyButtonClasses} ${currentQuantity === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                                     disabled={currentQuantity === 0}
                                                                     aria-label={`Decrease quantity of ${variant.name}`}
-                                                                >
-                                                                    -
-                                                                </button>
+                                                                >-</button>
                                                                 <span className={qtyDisplayClasses}>
                                                                     {currentQuantity > 0 ? currentQuantity : '-'}
                                                                 </span>
@@ -119,9 +113,7 @@ export const ProductList: React.FC = () => {
                                                                     onClick={() => handleIncrementItem(product, variant)}
                                                                     className={qtyButtonClasses}
                                                                     aria-label={`Increase quantity of ${variant.name}`}
-                                                                >
-                                                                    +
-                                                                </button>
+                                                                >+</button>
                                                             </div>
                                                         </div>
                                                     );
