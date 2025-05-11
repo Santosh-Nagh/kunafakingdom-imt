@@ -1,11 +1,11 @@
-// backend/src/index.ts
+// backend/src/index.ts (Vercel Serverless Version)
 
 // --- Load Environment Variables ---
 import dotenv from 'dotenv';
-dotenv.config();
+dotenv.config(); // Vercel will use its own environment variables in production
 
-// --- Verify DATABASE_URL is loaded (for debugging) ---
-console.log('>>> DATABASE_URL Host Loaded:', process.env.DATABASE_URL?.split('@')[1]?.split('/')[0] || '!!! DATABASE_URL NOT LOADED !!!');
+// --- Verify DATABASE_URL is loaded (for debugging during local Vercel dev or if needed) ---
+// console.log('>>> DATABASE_URL Host (Backend):', process.env.DATABASE_URL?.split('@')[1]?.split('/')[0] || '!!! DATABASE_URL NOT LOADED !!!');
 
 // --- Imports ---
 import express, { Request, Response, Application, NextFunction, RequestHandler } from 'express';
@@ -16,18 +16,19 @@ import {
   OrderPaymentStatus,
   OrderProcessStatus,
   Prisma,
+  InventoryTrackingMethod,
 } from '@prisma/client';
 import { ZodError, z } from 'zod';
 
 // --- App Initialization ---
 const app: Application = express();
-const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3001;
+// const port: number = process.env.PORT ? parseInt(process.env.PORT) : 3001; // PORT is not used with app.listen
 
 // --- Prisma Client ---
 const prisma = new PrismaClient();
 
 // --- Middleware ---
-app.use(cors());
+app.use(cors()); // Allows all origins by default - good for start, can be configured for production
 app.use(express.json());
 
 // --- DTOs and Validation Schemas (using Zod) ---
@@ -53,27 +54,28 @@ const CreateOrderPayloadSchema = z.object({
 });
 type CreateOrderPayload = z.infer<typeof CreateOrderPayloadSchema>;
 
-// --- GET Route Handlers ---
+// --- GET Route Handlers (defined as constants) ---
+const getRootHandler: RequestHandler = (req, res) => {
+  res.send('Welcome to Kunafa Kingdom API!');
+};
 const getStoresHandler: RequestHandler = async (req, res, next) => {
   try {
     const stores = await prisma.store.findMany({ orderBy: { name: 'asc' } });
-    res.status(200).json(stores); // Send response
+    res.status(200).json(stores);
   } catch (error) {
     console.error('Failed to fetch stores:', error);
-    res.status(500).json({ error: 'Failed to fetch stores.' }); // Send error response
+    res.status(500).json({ error: 'Failed to fetch stores.' });
   }
 };
-
 const getCategoriesHandler: RequestHandler = async (req, res, next) => {
   try {
     const categories = await prisma.category.findMany({ orderBy: { name: 'asc' } });
-    res.status(200).json(categories); // Send response
+    res.status(200).json(categories);
   } catch (error) {
     console.error('Failed to fetch categories:', error);
-    res.status(500).json({ error: 'Failed to fetch categories.' }); // Send error response
+    res.status(500).json({ error: 'Failed to fetch categories.' });
   }
 };
-
 const getProductsHandler: RequestHandler = async (req, res, next) => {
   try {
     const products = await prisma.product.findMany({
@@ -81,30 +83,27 @@ const getProductsHandler: RequestHandler = async (req, res, next) => {
       include: { variants: { orderBy: { name: 'asc' } }, category: true },
       orderBy: { name: 'asc' }
     });
-    res.status(200).json(products); // Send response
+    res.status(200).json(products);
   } catch (error) {
     console.error('Failed to fetch products:', error);
-    res.status(500).json({ error: 'Failed to fetch products.' }); // Send error response
+    res.status(500).json({ error: 'Failed to fetch products.' });
   }
 };
-
 const getChargesHandler: RequestHandler = async (req, res, next) => {
   try {
     const charges = await prisma.charge.findMany({ orderBy: { name: 'asc' } });
-    res.status(200).json(charges); // Send response
+    res.status(200).json(charges);
   } catch (error) {
     console.error('Failed to fetch charges:', error);
-    res.status(500).json({ error: 'Failed to fetch charges.' }); // Send error response
+    res.status(500).json({ error: 'Failed to fetch charges.' });
   }
 };
 
-// --- POST Route Handler ---
+// --- POST Route Handler (defined as a constant) ---
 const createOrderHandler: RequestHandler = async (req, res, next) => {
   try {
-    // 1. Validate input
     const orderPayload: CreateOrderPayload = CreateOrderPayloadSchema.parse(req.body);
-
-    // --- Calculations ---
+    // ... (calculations for subtotal, taxes, etc. - same as before)
     const subtotal = orderPayload.items.reduce((acc, item) => acc + item.unit_price * item.quantity, 0);
     let applied_charges_amount_taxable = 0;
     let applied_charges_amount_nontaxable = 0;
@@ -116,10 +115,7 @@ const createOrderHandler: RequestHandler = async (req, res, next) => {
       dbCharges.forEach(dbCharge => chargeDetailsMap.set(dbCharge.id, { is_taxable: dbCharge.is_taxable }));
       for (const appliedCharge of orderPayload.applied_charges) {
         const chargeDetail = chargeDetailsMap.get(appliedCharge.chargeId);
-        if (!chargeDetail) {
-          res.status(400).json({ error: `Charge with ID ${appliedCharge.chargeId} not found.` }); // Send response
-          return; // Exit handler
-        }
+        if (!chargeDetail) { res.status(400).json({ error: `Charge with ID ${appliedCharge.chargeId} not found.` }); return; }
         if (chargeDetail.is_taxable) { applied_charges_amount_taxable += appliedCharge.amount_charged; }
         else { applied_charges_amount_nontaxable += appliedCharge.amount_charged; }
         orderAppliedChargesCreateData.push({ chargeId: appliedCharge.chargeId, amount_charged: appliedCharge.amount_charged });
@@ -132,46 +128,48 @@ const createOrderHandler: RequestHandler = async (req, res, next) => {
     const total_amount = parseFloat((taxable_amount + cgst_amount + sgst_amount + applied_charges_amount_nontaxable).toFixed(2));
     let change_given: number | undefined = undefined;
     let payment_status: OrderPaymentStatus = OrderPaymentStatus.Pending;
-
-    // --- Payment Status Logic ---
     if (orderPayload.payment_method === PaymentMethod.Cash) {
-      if (typeof orderPayload.amount_received !== 'number') {
-        res.status(400).json({ error: 'Amount received must be provided.' }); // Send response
-        return; // Exit handler
-      }
-      if (orderPayload.amount_received < total_amount) {
-        res.status(400).json({ error: 'Amount received is less than total amount.' }); // Send response
-        return; // Exit handler
-       }
+      if (typeof orderPayload.amount_received !== 'number') { res.status(400).json({ error: 'Amount received must be provided.' }); return; }
+      if (orderPayload.amount_received < total_amount) { res.status(400).json({ error: 'Amount received is less than total amount.' }); return; }
       change_given = parseFloat((orderPayload.amount_received - total_amount).toFixed(2));
       payment_status = OrderPaymentStatus.Paid;
-    } else if (
-        orderPayload.payment_method === PaymentMethod.Card ||
-        orderPayload.payment_method === PaymentMethod.UPI ||
-        orderPayload.payment_method === PaymentMethod.Swiggy ||
-        orderPayload.payment_method === PaymentMethod.Zomato ||
-        orderPayload.payment_method === PaymentMethod.Other
-      ) {
+    } else if ( [PaymentMethod.Card, PaymentMethod.UPI, PaymentMethod.Swiggy, PaymentMethod.Zomato, PaymentMethod.Other].includes(orderPayload.payment_method) ) {
       payment_status = OrderPaymentStatus.Paid;
     }
-
     const orderItemsCreateData: Prisma.OrderItemCreateManyOrderInput[] = orderPayload.items.map(item => ({
       variantId: item.variantId, quantity: item.quantity, unit_price: item.unit_price,
       total_price: parseFloat((item.unit_price * item.quantity).toFixed(2)),
     }));
 
-    // --- Transaction Block ---
+    // --- Transaction Block (same as before) ---
     const createdOrder = await prisma.$transaction(async (tx) => {
-      // Check Inventory
+      const variantIdsInOrder = orderPayload.items.map(item => item.variantId);
+      const variantsInDB = await tx.productVariant.findMany({
+        where: { id: { in: variantIdsInOrder } },
+        select: { id: true, inventoryTrackingMethod: true, name: true, product: { select: { name: true } } }
+      });
+      const variantInfoMap = new Map(variantsInDB.map(v => [v.id, v]));
+
       for (const item of orderPayload.items) {
-        const inventoryItem = await tx.inventory.findUnique({ where: { variantId_storeId: { variantId: item.variantId, storeId: orderPayload.storeId } } });
-        if (!inventoryItem || inventoryItem.quantity < item.quantity) {
-          throw new Error(`Insufficient stock for Variant ID ${item.variantId}. Available: ${inventoryItem?.quantity ?? 0}, Needed: ${item.quantity}`);
+        const variantDetails = variantInfoMap.get(item.variantId);
+        if (!variantDetails) {
+          throw new Error(`Product variant with ID ${item.variantId} not found.`);
+        }
+        if (variantDetails.inventoryTrackingMethod === InventoryTrackingMethod.TrackedBatch) {
+          const inventoryItem = await tx.inventory.findUnique({
+            where: { variantId_storeId: { variantId: item.variantId, storeId: orderPayload.storeId } }
+          });
+          if (!inventoryItem || inventoryItem.quantity < item.quantity) {
+            throw new Error(`Insufficient stock for ${variantDetails.product.name} - ${variantDetails.name}. Available: ${inventoryItem?.quantity ?? 0}, Needed: ${item.quantity}`);
+          }
+          await tx.inventory.update({
+            where: { variantId_storeId: { variantId: item.variantId, storeId: orderPayload.storeId } },
+            data: { quantity: { decrement: item.quantity } },
+          });
         }
       }
-      // Create Order
       const order = await tx.order.create({
-        data: { /* ... same data fields as before ... */ 
+        data: { /* ...same data fields... */ 
           storeId: orderPayload.storeId, customer_name: orderPayload.customer_name, customer_phone: orderPayload.customer_phone,
           aggregator_id: orderPayload.aggregator_id, payment_method: orderPayload.payment_method, amount_received: orderPayload.amount_received,
           change_given: change_given, subtotal: subtotal, applied_charges_amount_taxable: applied_charges_amount_taxable,
@@ -183,61 +181,40 @@ const createOrderHandler: RequestHandler = async (req, res, next) => {
         },
         include: { items: { include: { variant: { include: { product: true } } } }, applied_charges: { include: { charge: true } }, store: true },
       });
-      // Deduct Inventory
-      for (const item of orderPayload.items) {
-        await tx.inventory.update({
-          where: { variantId_storeId: { variantId: item.variantId, storeId: orderPayload.storeId } },
-          data: { quantity: { decrement: item.quantity } },
-        });
-      }
       return order;
-    }, { timeout: 15000 }); // End transaction
+    }, { timeout: 15000 });
 
-    res.status(201).json(createdOrder); // Send success response
+    res.status(201).json(createdOrder);
 
   } catch (error) {
-     // --- Error Handling ---
-    if (error instanceof ZodError) {
-      console.error("Zod Validation Error:", error.errors);
-      res.status(400).json({ error: 'Invalid order data provided.', details: error.errors }); // Send response
-      return; // Exit handler
+    // --- Error Handling (same as before) ---
+    if (error instanceof ZodError) { console.error("Zod Error:", error.errors); res.status(400).json({ error: 'Invalid order data.', details: error.errors }); return; }
+    if (error instanceof Prisma.PrismaClientKnownRequestError) { /* ... same specific prisma error checks ... */ 
+        console.error("Prisma Error:", error.code, error.message); 
+        if (error.code === 'P2003') { res.status(400).json({ error: 'Invalid reference ID.' }); return; } 
+        if (error.code === 'P2025') { res.status(400).json({ error: 'Inventory record not found.' }); return; } 
+        if (error.code === 'P2028') {res.status(500).json({ error: 'Transaction failed or timed out.' }); return;} 
     }
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      console.error("Prisma Error:", error.code, error.message);
-      if (error.code === 'P2003') { res.status(400).json({ error: 'Invalid reference ID.' }); return; }
-      if (error.code === 'P2025') { res.status(400).json({ error: 'Inventory record not found.' }); return; }
-      if (error.code === 'P2028') { res.status(500).json({ error: 'Transaction failed or timed out.' }); return; }
+    if (error instanceof Error && error.message.startsWith('Insufficient stock')) { res.status(400).json({ error: error.message }); return; }
+    if (error instanceof Error) {
+        console.error("Error during order creation:", error.message);
+        res.status(400).json({ error: error.message });
+        return;
     }
-    if (error instanceof Error && error.message.startsWith('Insufficient stock')) {
-      res.status(400).json({ error: error.message }); // Send response
-      return; // Exit handler
-    }
-    // Fallback for unexpected errors
-    console.error("Failed to create order:", error);
-    res.status(500).json({ error: 'Failed to create order.' }); // Send generic error response
-    // Optionally use next(error); if you have Express error middleware
+    console.error("Failed to create order (unknown type):", error); 
+    res.status(500).json({ error: 'Failed to create order due to an unexpected issue.' });
   }
-}; // End of createOrderHandler
+};
 
 // --- Assign Routes ---
-app.get('/', (req: Request, res: Response) => { res.send('Welcome to Kunafa Kingdom API!'); });
+app.get('/', getRootHandler); // Welcome route
 app.get('/api/stores', getStoresHandler);
 app.get('/api/categories', getCategoriesHandler);
 app.get('/api/products', getProductsHandler);
 app.get('/api/charges', getChargesHandler);
 app.post('/api/orders', createOrderHandler);
 
+// --- REMOVED app.listen(...) and gracefulShutdown ---
 
-// --- Server Start & Graceful Shutdown ---
-const server = app.listen(port, () => {
-  console.log(`✅ Server is running on http://localhost:${port}`);
-});
-
-const gracefulShutdown = async (signal: string) => {
-  console.log(`\n👋 Received ${signal}. Closing HTTP server.`);
-  server.close(async () => {
-    console.log('🛡️ HTTP server closed.'); await prisma.$disconnect(); console.log('🍃 Prisma Client disconnected.'); process.exit(0);
-  });
-};
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+// --- EXPORT THE APP FOR VERCEL ---
+export default app;
