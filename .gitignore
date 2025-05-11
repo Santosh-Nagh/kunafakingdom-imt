@@ -38,3 +38,19 @@ frontend/dist/
 backend/node_modules/.prisma/client/ # Prisma client is generated, often good to ignore and generate on build/postinstall
 # However, for Vercel serverless, sometimes it's easier to commit it if generation is tricky in build step.
 # Let's start by NOT ignoring .prisma/client and see if Vercel handles generation. If not, we commit it.
+.vercel
+
+# ====== Environment Files ======
+# Ignore all .env files at the root by default
+.env
+.env.*
+!.env.example # If you have an example file, don't ignore it
+
+# Ignore .env files within specific project folders too
+frontend/.env
+frontend/.env.*
+!frontend/.env.example # Allow example if it exists
+
+backend/.env
+backend/.env.*
+!backend/.env.example # Allow example if it exists
