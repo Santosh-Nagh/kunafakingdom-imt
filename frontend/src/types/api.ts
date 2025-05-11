@@ -1,11 +1,24 @@
 // frontend/src/types/api.ts
+
+// Import enums that might be used as values in payloads
 import { PaymentMethod } from './domain';
 
-// Matches backend Zod Schema for POST /api/orders payload
+// Import types that are extended or used as part of API shapes
+// These are type-only imports as they define structure, not runtime values from this file.
+import type { 
+    Order, 
+    OrderItem, 
+    ProductVariant, 
+    Product, 
+    OrderAppliedCharge, 
+    Charge, 
+    Store 
+} from './domain';
+
 export interface ApiOrderItemPayload {
   variantId: string;
   quantity: number;
-  unit_price: number; // Send price used at time of adding to cart
+  unit_price: number;
 }
 
 export interface ApiAppliedChargePayload {
@@ -18,24 +31,22 @@ export interface CreateOrderPayload {
   customer_name?: string;
   customer_phone?: string;
   aggregator_id?: string;
-  payment_method: PaymentMethod;
+  payment_method: PaymentMethod; // Enum used as value
   amount_received?: number;
   notes?: string;
   items: ApiOrderItemPayload[];
   applied_charges?: ApiAppliedChargePayload[];
 }
 
-// Define the expected response shape when an order is created or fetched
-// (This might include nested relations based on your backend include statement)
-// Example - adjust based on actual API response
-export type CreatedOrderResponse = Order & {
-    items: (OrderItem & {
-        variant: ProductVariant & {
-            product: Product;
+// Response from creating or fetching a full order
+export type CreatedOrderResponse = Order & { // Extends base Order type
+    items: (OrderItem & { 
+        variant: ProductVariant & { 
+            product: Product; 
         };
     })[];
-    applied_charges: (OrderAppliedCharge & {
-        charge: Charge;
+    applied_charges: (OrderAppliedCharge & { 
+        charge: Charge; 
     })[];
-    store: Store;
+    store: Store; 
 };
