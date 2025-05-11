@@ -1,34 +1,22 @@
 {
-    "name": "backend",
-    "version": "1.0.0",
-    "description": "Backend API for Kunafa Kingdom",
-    "main": "dist/index.js",
-    "scripts": {
-      "test": "echo \"Error: no test specified\" && exit 1",
-      "build": "tsc",
-      "start": "node dist/index.js",
-      "dev": "ts-node src/index.ts"
-    },
-    "keywords": [
-      "kunafa",
-      "kingdom",
-      "api",
-      "express",
-      "prisma",
-      "typescript"
-    ],
-    "author": "Nagh (with AI Coder)",
-    "license": "ISC",
-    "dependencies": {
-      "@prisma/client": "^6.7.0",
-      "express": "^4.19.2",
-      "zod": "^3.23.8"
-    },
-    "devDependencies": {
-      "@types/express": "^4.17.21",
-      "@types/node": "^20.14.2",
-      "prisma": "^6.7.0",
-      "ts-node": "^10.9.2",
-      "typescript": "^5.4.5"
-    }
+  "name": "kunafa-kingdom-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Main project for Kunafa Kingdom POS (frontend and backend)",
+  "scripts": {
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev": "npm-run-all --parallel dev:frontend dev:backend",
+    "build:frontend": "npm run build --prefix frontend",
+    "build:backend": "npm run build --prefix backend"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "author": "Nagh (with AI Coder)",
+  "license": "ISC",
+  "devDependencies": {
+    "npm-run-all": "^4.1.5"
   }
+}
