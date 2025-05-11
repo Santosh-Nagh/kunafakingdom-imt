@@ -20,6 +20,7 @@
   "author": "Nagh (with AI Coder)",
   "license": "ISC",
   "devDependencies": {
+    "@types/cors": "^2.8.18",
     "@types/express": "^5.0.1",
     "@types/node": "^22.15.15",
     "prisma": "^6.7.0",
@@ -28,7 +29,6 @@
   },
   "dependencies": {
     "@prisma/client": "^6.7.0",
-    "@types/cors": "^2.8.18",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
