@@ -1,30 +1,27 @@
-export const PaymentMethod = {
-  Cash: 'Cash',
-  Card: 'Card',
-  UPI: 'UPI',
-  Swiggy: 'Swiggy',
-  Zomato: 'Zomato',
-  Other: 'Other',
-} as const;
-export type PaymentMethod = typeof PaymentMethod[keyof typeof PaymentMethod];
+export enum PaymentMethod {
+  Cash = 'Cash',
+  Card = 'Card',
+  UPI = 'UPI',
+  Swiggy = 'Swiggy',
+  Zomato = 'Zomato',
+  Other = 'Other',
+}
 
-export const OrderPaymentStatus = {
-  Pending: 'Pending',
-  Paid: 'Paid',
-  Failed: 'Failed',
-  Refunded: 'Refunded',
-} as const;
-export type OrderPaymentStatus = typeof OrderPaymentStatus[keyof typeof OrderPaymentStatus];
+export enum OrderPaymentStatus {
+  Pending = 'Pending',
+  Paid = 'Paid',
+  Failed = 'Failed',
+  Refunded = 'Refunded',
+}
 
-export const OrderProcessStatus = {
-  Received: 'Received',
-  Preparing: 'Preparing',
-  ReadyForPickup: 'ReadyForPickup',
-  OutForDelivery: 'OutForDelivery',
-  Completed: 'Completed',
-  Cancelled: 'Cancelled',
-} as const;
-export type OrderProcessStatus = typeof OrderProcessStatus[keyof typeof OrderProcessStatus];
+export enum OrderProcessStatus {
+  Received = 'Received',
+  Preparing = 'Preparing',
+  ReadyForPickup = 'ReadyForPickup',
+  OutForDelivery = 'OutForDelivery',
+  Completed = 'Completed',
+  Cancelled = 'Cancelled',
+}
 
 export interface Store {
   id: string;
