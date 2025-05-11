@@ -1,21 +1,20 @@
 // frontend/src/services/api.ts
 
-import { Store, Product, Charge, CreatedOrderResponse } from '../types/domain'; // Import types based on Prisma schema
-import { CreateOrderPayload } from '../types/api'; // Import the specific payload type
+import { Store, Product, Charge } from '../types/domain'; // Ensure all needed domain types are imported
+import { CreateOrderPayload, CreatedOrderResponse, ProductWithRelations as ApiProductWithRelations } from '../types/api'; // Import specific API types
 
 // Base URL of your backend API
-// Make sure your backend server (from backend/src/index.ts) is running on port 3001
-const API_BASE_URL = 'http://localhost:3001/api';
+// import.meta.env.DEV is a Vite-specific environment variable.
+// It's true during 'npm run dev' and false during 'npm run build' (production).
+const API_BASE_URL = import.meta.env.DEV
+  ? 'http://localhost:3001/api' // For local development
+  : '/api';                     // For Vercel deployment (relative path)
 
 /**
  * Helper function to handle fetch responses and errors.
- * It checks if the response was successful (status 200-299).
- * If yes, it parses and returns the JSON data.
- * If not, it throws an error with the status text.
  */
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    // Try to get error details from the response body
     let errorData;
     try {
       errorData = await response.json();
@@ -24,19 +23,17 @@ async function handleResponse<T>(response: Response): Promise<T> {
     }
     const errorMessage = errorData?.error || errorData?.message || response.statusText;
     const error = new Error(`API Error (${response.status}): ${errorMessage}`);
-    console.error('API Error Details:', errorData); // Log details for debugging
+    console.error('API Error Details:', errorData);
     throw error;
   }
-  // Handle cases where the response might be empty (e.g., 204 No Content)
   if (response.status === 204) {
-      return undefined as T; // Or handle as appropriate for your API
+      return undefined as T; 
   }
   return response.json() as Promise<T>;
 }
 
 /**
  * Fetches the list of stores (branches) from the backend.
- * Corresponds to: GET /api/stores
  */
 export const getStores = async (): Promise<Store[]> => {
   const response = await fetch(`${API_BASE_URL}/stores`);
@@ -45,43 +42,29 @@ export const getStores = async (): Promise<Store[]> => {
 
 /**
  * Fetches the list of active products, including their variants and categories.
- * Corresponds to: GET /api/products
- * Note: The backend currently fetches ALL active products.
- * We might later add filtering by storeId if products/inventory are store-specific.
- * We define a specific return type to include nested relations fetched by the backend.
+ * Re-exporting ProductWithRelations from api.ts if that's where it's most specifically defined,
+ * or ensure domain.ts Product includes these for general use.
  */
-export type ProductWithRelations = Product & {
-    category: Category;
-    variants: ProductVariant[];
-};
-interface Category { id: string; name: string; } // Define nested types locally if not imported
-interface ProductVariant { id: string; name: string; price: number; sku?: string | null; productId: string; }
+export type ProductWithRelations = ApiProductWithRelations;
 
 export const getProducts = async (): Promise<ProductWithRelations[]> => {
   const response = await fetch(`${API_BASE_URL}/products`);
-  // We need to explicitly type the expected return shape based on the backend `include`
   return handleResponse<ProductWithRelations[]>(response);
 };
 
-
 /**
  * Fetches the list of available charges from the backend.
- * Corresponds to: GET /api/charges
  */
 export const getCharges = async (): Promise<Charge[]> => {
     const response = await fetch(`${API_BASE_URL}/charges`);
     return handleResponse<Charge[]>(response);
 };
 
-
 /**
  * Sends the details of a new order to the backend to be created.
- * Corresponds to: POST /api/orders
- * @param orderPayload - The order details matching the CreateOrderPayload type.
- * @returns The newly created order object, likely including nested details.
  */
 export const createOrder = async (orderPayload: CreateOrderPayload): Promise<CreatedOrderResponse> => {
-  console.log('Sending order payload:', JSON.stringify(orderPayload, null, 2)); // Log payload for debugging
+  console.log('Sending order payload to:', `${API_BASE_URL}/orders`, JSON.stringify(orderPayload, null, 2));
   const response = await fetch(`${API_BASE_URL}/orders`, {
     method: 'POST',
     headers: {
@@ -89,6 +72,5 @@ export const createOrder = async (orderPayload: CreateOrderPayload): Promise<Cre
     },
     body: JSON.stringify(orderPayload),
   });
-  // Use CreatedOrderResponse which expects nested relations based on backend include
   return handleResponse<CreatedOrderResponse>(response);
 };
