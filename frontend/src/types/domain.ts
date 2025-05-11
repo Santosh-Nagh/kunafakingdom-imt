@@ -1,34 +1,30 @@
-// frontend/src/types/domain.ts
+export const PaymentMethod = {
+  Cash: 'Cash',
+  Card: 'Card',
+  UPI: 'UPI',
+  Swiggy: 'Swiggy',
+  Zomato: 'Zomato',
+  Other: 'Other',
+} as const;
+export type PaymentMethod = typeof PaymentMethod[keyof typeof PaymentMethod];
 
-// --- Enums ---
-// These are used as values, so they are standard exports.
-export enum PaymentMethod {
-  Cash = 'Cash',
-  Card = 'Card',
-  UPI = 'UPI',
-  Swiggy = 'Swiggy',
-  Zomato = 'Zomato',
-  Other = 'Other',
-}
+export const OrderPaymentStatus = {
+  Pending: 'Pending',
+  Paid: 'Paid',
+  Failed: 'Failed',
+  Refunded: 'Refunded',
+} as const;
+export type OrderPaymentStatus = typeof OrderPaymentStatus[keyof typeof OrderPaymentStatus];
 
-export enum OrderPaymentStatus {
-  Pending = 'Pending',
-  Paid = 'Paid',
-  Failed = 'Failed',
-  Refunded = 'Refunded',
-}
-
-export enum OrderProcessStatus {
-  Received = 'Received',
-  Preparing = 'Preparing',
-  ReadyForPickup = 'ReadyForPickup',
-  OutForDelivery = 'OutForDelivery',
-  Completed = 'Completed',
-  Cancelled = 'Cancelled',
-}
-
-// --- Interfaces for Domain Models ---
-// These will often be imported as `import type` unless used for `instanceof` checks (rarely for interfaces).
+export const OrderProcessStatus = {
+  Received: 'Received',
+  Preparing: 'Preparing',
+  ReadyForPickup: 'ReadyForPickup',
+  OutForDelivery: 'OutForDelivery',
+  Completed: 'Completed',
+  Cancelled: 'Cancelled',
+} as const;
+export type OrderProcessStatus = typeof OrderProcessStatus[keyof typeof OrderProcessStatus];
 
 export interface Store {
   id: string;
@@ -41,17 +37,15 @@ export interface Store {
 export interface Category {
   id: string;
   name: string;
-  // products?: Product[]; // Relations usually handled by specific fetch types
 }
 
 export interface ProductVariant {
   id: string;
-  name: string; // e.g., "Small", "Large"
+  name: string;
   price: number;
   sku?: string | null;
   productId: string;
-  product?: Product; // For potential nesting
-  // inventoryTrackingMethod: string; // Assuming this comes from backend correctly, map to enum if needed
+  product?: Product;
 }
 
 export interface Product {
@@ -65,10 +59,8 @@ export interface Product {
   variants: ProductVariant[];
 }
 
-// Type for products fetched with their full relations for display
 export type ProductWithRelations = Product & {
-  category: Category; // Assuming category is always included for product display
-  // variants are already part of Product type
+  category: Category;
 };
 
 export interface Charge {
@@ -78,7 +70,6 @@ export interface Charge {
   is_taxable: boolean;
 }
 
-// For frontend state management (OrderContext)
 export interface OrderItemState {
   variantId: string;
   productId: string;
@@ -96,7 +87,6 @@ export interface AppliedChargeState {
   is_taxable: boolean;
 }
 
-// For full order details (e.g., from API response, for invoice)
 export interface OrderItem {
   id: string;
   quantity: number;
@@ -104,7 +94,7 @@ export interface OrderItem {
   total_price: number;
   orderId: string;
   variantId: string;
-  variant?: ProductVariant & { product?: Product }; // Nested details for display
+  variant?: ProductVariant & { product?: Product };
 }
 
 export interface OrderAppliedCharge {
@@ -112,7 +102,7 @@ export interface OrderAppliedCharge {
   amount_charged: number;
   orderId: string;
   chargeId: string;
-  charge?: Charge; // Nested details for display
+  charge?: Charge;
 }
 
 export interface Order {
@@ -129,14 +119,14 @@ export interface Order {
   cgst_amount: number;
   sgst_amount: number;
   total_amount: number;
-  payment_method: PaymentMethod; // Enum
+  payment_method: PaymentMethod;
   amount_received?: number | null;
   change_given?: number | null;
-  payment_status: OrderPaymentStatus; // Enum
-  order_status: OrderProcessStatus; // Enum
+  payment_status: OrderPaymentStatus;
+  order_status: OrderProcessStatus;
   notes?: string | null;
-  created_at: string; // Typically string from JSON
-  updated_at: string; // Typically string from JSON
+  created_at: string;
+  updated_at: string;
   store?: Store;
   items?: OrderItem[];
   applied_charges?: OrderAppliedCharge[];
