@@ -2,8 +2,9 @@
 
 import React from 'react';
 // Import types using 'import type'
-import type { CreatedOrderResponse, OrderItem, OrderAppliedCharge } from '../types/domain';
-import type { Store } from '../types/domain';
+import type { CreatedOrderResponse } from '../types/api';
+import type { OrderItem, OrderAppliedCharge, Store } from '../types/domain';
+
 
 interface InvoiceModalProps {
   order: CreatedOrderResponse | null; 
