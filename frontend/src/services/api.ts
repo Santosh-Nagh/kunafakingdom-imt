@@ -1,14 +1,13 @@
 // frontend/src/services/api.ts
 
-import { Store, Product, Charge } from '../types/domain'; // Ensure all needed domain types are imported
-import { CreateOrderPayload, CreatedOrderResponse, ProductWithRelations as ApiProductWithRelations } from '../types/api'; // Import specific API types
+// Import types using 'import type' where they are only used for type annotations
+import type { Store, Charge, ProductWithRelations } from '../types/domain';
+import type { CreateOrderPayload, CreatedOrderResponse } from '../types/api';
 
 // Base URL of your backend API
-// import.meta.env.DEV is a Vite-specific environment variable.
-// It's true during 'npm run dev' and false during 'npm run build' (production).
 const API_BASE_URL = import.meta.env.DEV
   ? 'http://localhost:3001/api' // For local development
-  : '/api';                     // For Vercel deployment (relative path)
+  : '/api';                     // For Vercel deployment
 
 /**
  * Helper function to handle fetch responses and errors.
@@ -42,11 +41,7 @@ export const getStores = async (): Promise<Store[]> => {
 
 /**
  * Fetches the list of active products, including their variants and categories.
- * Re-exporting ProductWithRelations from api.ts if that's where it's most specifically defined,
- * or ensure domain.ts Product includes these for general use.
  */
-export type ProductWithRelations = ApiProductWithRelations;
-
 export const getProducts = async (): Promise<ProductWithRelations[]> => {
   const response = await fetch(`${API_BASE_URL}/products`);
   return handleResponse<ProductWithRelations[]>(response);
