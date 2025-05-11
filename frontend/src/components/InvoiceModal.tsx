@@ -1,11 +1,12 @@
 // frontend/src/components/InvoiceModal.tsx
 
 import React from 'react';
-import { CreatedOrderResponse, OrderItem, OrderAppliedCharge } from '../types/api';
-import { Store } from '../types/domain'; // Ensure Store type is imported
+// Import types using 'import type'
+import type { CreatedOrderResponse, OrderItem, OrderAppliedCharge } from '../types/api';
+import type { Store } from '../types/domain';
 
 interface InvoiceModalProps {
-  order: CreatedOrderResponse | null;
+  order: CreatedOrderResponse | null; 
   onClose: () => void;
 }
 
@@ -15,21 +16,16 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
   }
 
   const handlePrint = () => {
-    // Basic print styles are in App.tsx for the modal.
-    // More specific print styling would require dedicated @media print CSS.
     window.print();
   };
 
-  const currentStore: Store | undefined = order.store;
-  const appTitle = "Kunafa Kingdom"; // Or make this dynamic if needed
+  const currentStore: Store | undefined = order.store; // currentStore is typed as Store | undefined
+  const appTitle = "Kunafa Kingdom";
 
   return (
-    // Modal Backdrop
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 print:bg-transparent print:p-0 print:items-start print:justify-start">
-      {/* Modal Content */}
       <div className="bg-white p-6 sm:p-8 rounded-lg shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto print:shadow-none print:rounded-none print:max-h-full print:max-w-full print:border print:border-gray-300">
         
-        {/* Invoice Header */}
         <div className="text-center mb-6 border-b border-gray-300 pb-4">
           <h2 className="text-3xl font-bold text-brand-green">{appTitle}</h2>
           {currentStore?.name && <p className="text-lg font-semibold text-brand-text-on-light mt-1">{currentStore.name}</p>}
@@ -42,7 +38,6 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
           <p className="text-xs text-gray-500">Date: {new Date(order.created_at).toLocaleString()}</p>
         </div>
 
-        {/* Items Section */}
         <div className="mb-4">
           <h3 className="text-lg font-semibold mb-2 text-brand-green">Items Ordered:</h3>
           <table className="w-full text-sm">
@@ -55,7 +50,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
               </tr>
             </thead>
             <tbody>
-              {order.items?.map((item: OrderItem) => (
+              {order.items?.map((item: OrderItem) => ( // item typed as OrderItem
                 <tr key={item.id} className="border-b border-gray-100 last:border-b-0">
                   <td className="py-2 pr-1 text-brand-text-on-light">
                     {item.variant?.product?.name || 'Product'} - {item.variant?.name || 'Variant'}
@@ -69,11 +64,10 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
           </table>
         </div>
 
-        {/* Applied Charges Section */}
         {order.applied_charges && order.applied_charges.length > 0 && (
           <div className="mb-4 pt-2 border-t border-gray-200">
             <h3 className="text-md font-semibold mt-2 mb-1 text-brand-green">Additional Charges:</h3>
-            {order.applied_charges.map((appliedCharge: OrderAppliedCharge) => (
+            {order.applied_charges.map((appliedCharge: OrderAppliedCharge) => ( // appliedCharge typed
               <div key={appliedCharge.id} className="flex justify-between text-sm text-brand-text-on-light py-0.5">
                 <span>{appliedCharge.charge?.name || 'Charge'}</span>
                 <span className="font-medium">₹{appliedCharge.amount_charged.toFixed(2)}</span>
@@ -82,9 +76,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
           </div>
         )}
         
-        {/* Totals Section */}
         <div className="mt-4 pt-4 border-t-2 border-gray-300 space-y-1.5 text-sm">
-          {/* ... (Subtotal, Taxable Charges, Taxable Amount, CGST, SGST, Non-Taxable Charges - styled for consistency) ... */}
           <div className="flex justify-between text-brand-text-on-light">
             <span>Subtotal (Items):</span>
             <span className="font-medium">₹{order.subtotal.toFixed(2)}</span>
@@ -119,7 +111,6 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
           </div>
         </div>
 
-        {/* Payment Details Section */}
         <div className="mt-4 pt-4 border-t border-gray-200 space-y-1 text-sm">
             <div className="flex justify-between text-brand-text-on-light">
                 <span>Payment Method:</span>
@@ -139,7 +130,6 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ order, onClose }) =>
             )}
         </div>
 
-        {/* Footer & Actions */}
         <div className="mt-8 pt-4 border-t border-gray-300 text-center space-x-3 print:hidden">
           <button
             onClick={handlePrint}
