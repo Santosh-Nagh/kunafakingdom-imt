@@ -41,5 +41,3 @@ export type CreatedOrderResponse = Order & {
   })[];
   store: Store;
 };
-
-export type { OrderItem, OrderAppliedCharge };
