@@ -1,0 +1,45 @@
+### Create a new order with specific IDs
+POST http://localhost:3001/api/orders
+Content-Type: application/json
+
+{
+  "storeId": "d2129592-fb3b-4a96-ab49-4c34e6a163c9",
+  "customer_name": "Test Customer Fixed JSON",
+  "customer_phone": "9998887770",
+  "payment_method": "Cash",
+  "amount_received": 500,
+  "notes": "Test order: 1x 250g Baklava Box + Pkg Charge",
+  "items": [
+    {
+      "variantId": "73c72ce6-85e9-441c-b053-ed668915de3d",
+      "quantity": 1,
+      "unit_price": 400
+    }
+  ],
+  "applied_charges": [
+     {
+       "chargeId": "b1f4b48f-1a90-402a-b815-e5cf45b8df6a",
+       "amount_charged": 20
+     }
+  ]
+}
+
+### --------------------------------- ###
+### Another Example Order (Commented Out - Remember to replace IDs if you use this)
+#
+# POST http://localhost:3001/api/orders
+# Content-Type: application/json
+#
+# {
+#   "storeId": "PASTE_DIFFERENT_STORE_ID_HERE",
+#   "payment_method": "UPI",
+#   "notes": "Another test order",
+#   "items": [
+#     {
+#       "variantId": "PASTE_DIFFERENT_VARIANT_ID_HERE",
+#       "quantity": 2,
+#       "unit_price": 300
+#     }
+#   ],
+#   "applied_charges": []
+# }

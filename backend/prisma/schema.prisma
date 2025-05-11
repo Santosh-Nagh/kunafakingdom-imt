@@ -1,0 +1,193 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql" // Specifies that we're using PostgreSQL
+  url      = env("DATABASE_URL") // Tells Prisma to get the database connection string from an environment variable
+}
+
+// +++ ADDED ENUM +++
+enum InventoryTrackingMethod {
+  TrackedBatch // For items where finished goods stock is tracked
+  MadeToOrder  // For items made fresh on demand, stock check bypassed for finished good
+}
+
+// 1. Stores Table
+model Store {
+  id           String    @id @default(uuid()) // Primary Key, automatically generated UUID
+  name         String    @unique
+  address      String? // Optional field
+  phone_number String? // Optional field
+  gstin        String?
+  created_at   DateTime  @default(now()) // Automatically set to current time on creation
+  updated_at   DateTime  @updatedAt // Automatically updated on modification
+
+  orders    Order[] // A store can have many orders
+  Inventory Inventory[] // A store can have many inventory items
+}
+
+// 2. Categories Table
+model Category {
+  id         String   @id @default(uuid())
+  name       String   @unique // Category names should be unique
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  products Product[] // A category can have many products
+}
+
+// 3. Products Table
+model Product {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  image_url   String?
+  is_active   Boolean  @default(true) // Default to true when a new product is added
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  category   Category @relation(fields: [categoryId], references: [id]) // Foreign Key relationship to Category
+  categoryId String   // Foreign Key field
+
+  variants ProductVariant[] // A product can have many variants
+}
+
+// 4. ProductVariants Table
+model ProductVariant {
+  id                      String    @id @default(uuid())
+  name                    String // e.g., "Small", "Large", "Regular"
+  price                   Float     // Selling price
+  sku                     String?   @unique // Stock Keeping Unit, optional but should be unique if present
+  
+  // +++ ADDED FIELD +++
+  inventoryTrackingMethod InventoryTrackingMethod @default(TrackedBatch) // Default to TrackedBatch
+
+  created_at              DateTime  @default(now())
+  updated_at              DateTime  @updatedAt
+
+  product   Product @relation(fields: [productId], references: [id]) // Foreign Key relationship to Product
+  productId String  // Foreign Key field
+
+  Inventory  Inventory[]   // A variant can be in inventory at multiple stores
+  OrderItems OrderItem[]   // A variant can be part of many order items
+}
+
+// 5. Inventory Table
+model Inventory {
+  id            String   @id @default(uuid())
+  quantity      Int
+  min_threshold Int      @default(0) // Default minimum stock before alert
+  updated_at    DateTime @updatedAt
+
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  variantId String
+
+  store   Store @relation(fields: [storeId], references: [id])
+  storeId String
+
+  @@unique([variantId, storeId]) // Ensures a variant can only have one inventory record per store
+}
+
+// 6. Charges Table
+model Charge {
+  id                String   @id @default(uuid())
+  name              String   @unique
+  amount            Float
+  is_taxable        Boolean  @default(false)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  OrderAppliedCharges OrderAppliedCharge[]
+}
+
+// Enum for Payment Methods - good for predefined choices
+enum PaymentMethod {
+  Cash
+  Card
+  UPI
+  Swiggy
+  Zomato
+  Other
+}
+
+// Enum for Order Statuses
+enum OrderPaymentStatus {
+  Pending
+  Paid
+  Failed
+  Refunded
+}
+
+enum OrderProcessStatus {
+  Received
+  Preparing
+  ReadyForPickup
+  OutForDelivery // If you do delivery
+  Completed
+  Cancelled
+}
+
+// 7. Orders Table
+model Order {
+  id                                String    @id @default(uuid())
+  customer_name                     String?
+  customer_phone                    String?
+  aggregator_id                     String?   // e.g., Swiggy/Zomato order ID
+  subtotal                          Float     // Sum of orderItem.total_price
+  applied_charges_amount_taxable    Float     @default(0) // Sum of taxable applied charges
+  applied_charges_amount_nontaxable Float     @default(0) // Sum of non-taxable applied charges
+  discount_amount                   Float     @default(0)
+  taxable_amount                    Float     // (subtotal - pre_tax_discounts_on_items) + applied_charges_amount_taxable
+  cgst_amount                       Float     @default(0) // 9% of taxable_amount
+  sgst_amount                       Float     @default(0) // 9% of taxable_amount
+  total_amount                      Float     // Final bill
+  payment_method                    PaymentMethod
+  amount_received                   Float?    // For cash payments
+  change_given                      Float?    // For cash payments
+  payment_status                    OrderPaymentStatus @default(Pending)
+  order_status                      OrderProcessStatus @default(Received)
+  notes                             String?
+  created_at                        DateTime  @default(now())
+  updated_at                        DateTime  @updatedAt
+
+  store   Store @relation(fields: [storeId], references: [id])
+  storeId String
+
+  items             OrderItem[] // An order has many items
+  applied_charges   OrderAppliedCharge[] // An order can have many additional charges
+}
+
+// 8. OrderItems Table (Line items of an order)
+model OrderItem {
+  id          String   @id @default(uuid())
+  quantity    Int
+  unit_price  Float    // Price of the variant at the time of order
+  total_price Float    // quantity * unit_price
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  order   Order @relation(fields: [orderId], references: [id])
+  orderId String
+
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  variantId String
+}
+
+// 9. OrderAppliedCharges Table (Which specific charges were applied to an order)
+model OrderAppliedCharge {
+  id             String   @id @default(uuid())
+  amount_charged Float    // Amount of this specific charge for this order
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  order   Order @relation(fields: [orderId], references: [id])
+  orderId String
+
+  charge   Charge @relation(fields: [chargeId], references: [id])
+  chargeId String
+}

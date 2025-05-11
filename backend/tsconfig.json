@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "es2020", // Specifies the JavaScript version for the output code
+    "module": "commonjs", // Specifies the module system (CommonJS for Node.js)
+    "lib": ["es2020"], // Specifies standard libraries available
+    "strict": true, // Enables all strict type-checking options
+    "esModuleInterop": true, // Allows default imports from CommonJS modules
+    "skipLibCheck": true, // Skips type checking of all declaration files (*.d.ts)
+    "forceConsistentCasingInFileNames": true, // Ensures filenames are cased consistently
+    "outDir": "./dist", // Redirect output structure to the directory.
+    "rootDir": "./src", // Specify the root directory of input files.
+    "resolveJsonModule": true, // Allows importing .json files
+    "sourceMap": true // Generates corresponding '.map' file for debugging
+  },
+  "include": ["src/**/*"], // Specifies which .ts files to include in compilation
+  "exclude": ["node_modules", "**/*.spec.ts"] // Specifies which files/folders to exclude
+}

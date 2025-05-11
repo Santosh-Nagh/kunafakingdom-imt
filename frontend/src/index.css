@@ -1,0 +1,20 @@
+/* frontend/src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Apply base styles to the body */
+@layer base {
+  body {
+    @apply bg-brand-cream text-brand-text-on-light antialiased; /* Use cream as main background, dark text */
+  }
+
+  /* You can define other global styles or component layer styles here if needed */
+  /* For example, consistent input styling: */
+  /*
+  input[type="text"], input[type="tel"], input[type="number"], textarea, select {
+    @apply border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm;
+  }
+  */
+  /* We'll mostly style inputs directly on components for now for better control */
+}
