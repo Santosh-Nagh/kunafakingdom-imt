@@ -32,3 +32,10 @@
     }
   ]
 }
+{
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "edge"
+    }
+  }
+}
